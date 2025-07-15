@@ -37,11 +37,8 @@ Necesitas tener instalado ffmpeg y que esté en la variable PATH del sistema par
 
             Abre la consola CMD o PowerShell.
 
-            Escribe:
+                ffmpeg --version
 
-            bash
-            Copiar
-            Editar
-            ffmpeg -version
-            Si te muestra información de la versión, está listo para usar.
+                
 
+        
