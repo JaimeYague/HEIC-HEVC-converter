@@ -2,9 +2,9 @@
 An HEIC/HEVC to .JPEG and .MOV converter
 
 
-install requeriments: 
+pip install requeriments.txt: 
 
-pip install customtkinter pillow pyheif
+esto instala las dependencias necesarias
 
 Necesitas tener instalado ffmpeg y que esté en la variable PATH del sistema para poder llamarlo desde Python con subprocess.
 
@@ -39,6 +39,6 @@ Necesitas tener instalado ffmpeg y que esté en la variable PATH del sistema par
 
                 ffmpeg --version
 
-                
+
 
         
