@@ -4,34 +4,44 @@ import subprocess
 import os
 import threading
 
-ctk.set_appearance_mode("System")
+ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
+
 
 class ConvertidorFFmpeg(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         self.title("Convertidor HEIC/HEVC a JPEG/MP4")
-        self.geometry("600x400")
+        self.geometry("600x450")
 
         self.archivos = []
 
+        # Botón para seleccionar archivos
         self.btn_seleccionar = ctk.CTkButton(self, text="Seleccionar archivos HEIC/HEVC", command=self.seleccionar_archivos)
         self.btn_seleccionar.pack(pady=20)
 
+        # Lista para mostrar archivos seleccionados
         self.lista_archivos = ctk.CTkTextbox(self, height=10)
-        self.lista_archivos.pack(fill="both", expand=True, padx=20, pady=(0,10))
+        self.lista_archivos.pack(fill="both", expand=True, padx=20, pady=(0, 10))
 
+        # Barra de progreso
+        self.progress = ctk.CTkProgressBar(self, orientation="horizontal")
+        self.progress.set(0)
+        self.progress.pack(pady=10, padx=20, fill="x")
+
+        # Botón convertir
         self.btn_convertir = ctk.CTkButton(self, text="Convertir", command=self.iniciar_conversion)
         self.btn_convertir.pack(pady=10)
 
+        # Label para mostrar estado
         self.lbl_estado = ctk.CTkLabel(self, text="")
         self.lbl_estado.pack(pady=5)
 
     def seleccionar_archivos(self):
         archivos = filedialog.askopenfilenames(
-            title="Selecciona archivos HEIC o HEVC",
-            filetypes=[("HEIC y HEVC", "*.heic *.HEIC *.hevc *.HEVC")]
+            title="Selecciona archivos HEIC, HEVC o MOV",
+            filetypes=[("HEIC, HEVC y MOV", "*.mov *.MOV *.heic *.HEIC *.hevc *.HEVC")]
         )
         if archivos:
             self.archivos = list(archivos)
@@ -39,6 +49,7 @@ class ConvertidorFFmpeg(ctk.CTk):
             for f in self.archivos:
                 self.lista_archivos.insert("end", f + "\n")
             self.lbl_estado.configure(text=f"{len(self.archivos)} archivo(s) seleccionados.")
+            self.progress.set(0)
 
     def iniciar_conversion(self):
         if not self.archivos:
@@ -50,23 +61,33 @@ class ConvertidorFFmpeg(ctk.CTk):
 
     def convertir_archivos(self):
         errores = []
-        for archivo in self.archivos:
+        total = len(self.archivos)
+
+        for i, archivo in enumerate(self.archivos, start=1):
             ext = os.path.splitext(archivo)[1].lower()
             if ext == ".heic":
                 salida = os.path.splitext(archivo)[0] + ".jpeg"
                 cmd = ["ffmpeg", "-y", "-i", archivo, salida]
+
             elif ext == ".hevc":
                 salida = os.path.splitext(archivo)[0] + ".mp4"
                 cmd = [
                     "ffmpeg", "-y", "-i", archivo,
-                    "-c:v", "libx264",         # Video: compatible con Windows
-                    "-profile:v", "main",     # Perfil compatible
-                    "-pix_fmt", "yuv420p",     # Formato de color compatible
-                    "-c:a", "aac",             # Audio en AAC
-                    "-b:a", "192k",            # Bitrate razonable
-                    "-movflags", "+faststart", # Mejora compatibilidad al comienzo
+                    "-c:v", "libx264",
+                    "-profile:v", "high",
+                    "-pix_fmt", "yuv420p",
+                    "-color_primaries", "bt709",
+                    "-color_trc", "bt709",
+                    "-colorspace", "bt709",
+                    "-c:a", "aac",
+                    "-b:a", "192k",
+                    "-movflags", "+faststart",
                     salida
                 ]
+            elif ext == ".mov":
+                salida = os.path.splitext(archivo)[0] + ".mp4"
+                cmd = ["ffmpeg", "-y", "-i", archivo, "-c:v", "libx264", "-c:a", "aac", salida]
+
             else:
                 errores.append(f"Formato no soportado: {archivo}")
                 continue
@@ -77,6 +98,9 @@ class ConvertidorFFmpeg(ctk.CTk):
                     errores.append(f"Error al convertir {archivo}:\n{resultado.stderr}")
             except Exception as e:
                 errores.append(f"Excepción al convertir {archivo}: {str(e)}")
+
+            progreso = i / total
+            self.progress.set(progreso)
 
         self.after(0, self.conversion_finalizada, errores)
 
@@ -89,6 +113,8 @@ class ConvertidorFFmpeg(ctk.CTk):
         else:
             self.lbl_estado.configure(text="Conversión completada correctamente.")
             messagebox.showinfo("Éxito", "Todos los archivos se convirtieron correctamente.")
+        self.progress.set(0)
+
 
 if __name__ == "__main__":
     app = ConvertidorFFmpeg()
