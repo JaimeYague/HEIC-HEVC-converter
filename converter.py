@@ -17,6 +17,7 @@ def verificar_ffmpeg():
 class ConvertidorFFmpeg(ctk.CTk):
     def __init__(self):
         super().__init__()
+        self.carpeta_destino = ""
 
         if not verificar_ffmpeg():
             messagebox.showerror("FFmpeg no encontrado", "No se detectó FFmpeg en el sistema.\nAsegúrate de que esté instalado y agregado al PATH.")
@@ -31,6 +32,13 @@ class ConvertidorFFmpeg(ctk.CTk):
         # Botón para seleccionar archivos
         self.btn_seleccionar = ctk.CTkButton(self, text="Seleccionar archivos HEIC/HEVC/MOV", command=self.seleccionar_archivos)
         self.btn_seleccionar.pack(pady=20)
+
+        self.btn_carpeta = ctk.CTkButton(self, text="Seleccionar carpeta de destino", command=self.seleccionar_carpeta)
+        self.btn_carpeta.pack(pady=5)
+
+        # Label para mostrar carpeta destino
+        self.lbl_carpeta = ctk.CTkLabel(self, text="Destino: carpeta original")
+        self.lbl_carpeta.pack(pady=5)
 
         # Lista para mostrar archivos seleccionados
         self.lista_archivos = ctk.CTkTextbox(self, height=10)
@@ -48,6 +56,15 @@ class ConvertidorFFmpeg(ctk.CTk):
         # Label para mostrar estado
         self.lbl_estado = ctk.CTkLabel(self, text="")
         self.lbl_estado.pack(pady=5)
+
+    def seleccionar_carpeta(self):
+        carpeta = filedialog.askdirectory(title="Selecciona la carpeta de destino")
+        if carpeta:
+            self.carpeta_destino = carpeta
+            self.lbl_carpeta.configure(text=f"Destino: {carpeta}")
+        else:
+            self.carpeta_destino = ""
+            self.lbl_carpeta.configure(text="Destino: carpeta original")
 
     def seleccionar_archivos(self):
         archivos = filedialog.askopenfilenames(
@@ -76,12 +93,20 @@ class ConvertidorFFmpeg(ctk.CTk):
 
         for i, archivo in enumerate(self.archivos, start=1):
             ext = os.path.splitext(archivo)[1].lower()
+            nombre_base = os.path.splitext(os.path.basename(archivo))[0]
+
             if ext == ".heic":
-                salida = os.path.splitext(archivo)[0] + ".jpeg"
+                if self.carpeta_destino:
+                    salida = os.path.join(self.carpeta_destino, nombre_base + ".jpeg")
+                else:
+                    salida = os.path.splitext(archivo)[0] + ".jpeg"
                 cmd = ["ffmpeg", "-y", "-i", archivo, salida]
 
             elif ext == ".hevc":
-                salida = os.path.splitext(archivo)[0] + ".mp4"
+                if self.carpeta_destino:
+                    salida = os.path.join(self.carpeta_destino, nombre_base + ".mp4")
+                else:
+                    salida = os.path.splitext(archivo)[0] + ".mp4"
                 cmd = [
                     "ffmpeg", "-y", "-i", archivo,
                     "-c:v", "libx264",
@@ -95,8 +120,12 @@ class ConvertidorFFmpeg(ctk.CTk):
                     "-movflags", "+faststart",
                     salida
                 ]
+
             elif ext == ".mov":
-                salida = os.path.splitext(archivo)[0] + ".mp4"
+                if self.carpeta_destino:
+                    salida = os.path.join(self.carpeta_destino, nombre_base + ".mp4")
+                else:
+                    salida = os.path.splitext(archivo)[0] + ".mp4"
                 cmd = ["ffmpeg", "-y", "-i", archivo, "-c:v", "libx264", "-c:a", "aac", salida]
 
             else:
