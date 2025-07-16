@@ -7,18 +7,29 @@ import threading
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
 
+def verificar_ffmpeg():
+    try:
+        subprocess.run(["ffmpeg", "-version"], capture_output=True, check=True)
+        return True
+    except Exception:
+        return False
 
 class ConvertidorFFmpeg(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Convertidor HEIC/HEVC a JPEG/MP4")
+        if not verificar_ffmpeg():
+            messagebox.showerror("FFmpeg no encontrado", "No se detectó FFmpeg en el sistema.\nAsegúrate de que esté instalado y agregado al PATH.")
+            self.destroy()
+            return
+
+        self.title("Convertidor HEIC/HEVC/MOV a JPEG/MP4")
         self.geometry("600x450")
 
         self.archivos = []
 
         # Botón para seleccionar archivos
-        self.btn_seleccionar = ctk.CTkButton(self, text="Seleccionar archivos HEIC/HEVC", command=self.seleccionar_archivos)
+        self.btn_seleccionar = ctk.CTkButton(self, text="Seleccionar archivos HEIC/HEVC/MOV", command=self.seleccionar_archivos)
         self.btn_seleccionar.pack(pady=20)
 
         # Lista para mostrar archivos seleccionados
